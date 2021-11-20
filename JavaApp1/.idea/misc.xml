@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/debug/res/menu/main.xml" value="0.1" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/activity_launcher.xml" value="0.38697916666666665" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/activity_maps.xml" value="0.3041025641025641" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/activity_saves.xml" value="0.33" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/activity_settings.xml" value="0.3078125" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/app_bar_main.xml" value="0.1" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/content_main.xml" value="0.1" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/drawer_layout.xml" value="0.3697916666666667" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/fragment_first.xml" value="0.3697916666666667" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/fragment_gallery.xml" value="0.1" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/fragment_home.xml" value="0.1" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/fragment_second.xml" value="0.3697916666666667" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/fragment_slideshow.xml" value="0.1" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/fragment_third.xml" value="0.3697916666666667" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/nav_header_main.xml" value="0.1" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/menu/drawer_view.xml" value="0.3697916666666667" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="Android Studio default JDK" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/build/classes" />
+  </component>
+  <component name="ProjectType">
+    <option name="id" value="Android" />
+  </component>
+</project>

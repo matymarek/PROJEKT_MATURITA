@@ -4,7 +4,10 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import java.sql.Date;
+import java.util.ArrayList;
 
 @Entity
 public class Route {
@@ -16,5 +19,9 @@ public class Route {
     public double length;
     @ColumnInfo(name = "track_time")
     public Date timeLength;
+    @ColumnInfo(name = "track_points_lat")
+    public ArrayList<Double> latPoints;
+    @ColumnInfo(name = "track_points_long")
+    public ArrayList<Double> longPoints;
 }
 

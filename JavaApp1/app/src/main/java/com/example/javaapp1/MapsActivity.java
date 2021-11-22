@@ -58,6 +58,8 @@ public class MapsActivity extends AppCompatActivity implements
 
     GoogleMap mMap;
     ArrayList<LatLng> route;
+    ArrayList<Double> latRoute;
+    ArrayList<Double> longRoute;
     Button Button1;
     Button Button2;
     Button Button3;
@@ -86,9 +88,9 @@ public class MapsActivity extends AppCompatActivity implements
         com.example.javaapp1.databinding.ActivityMapsBinding binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         setNavigationViewListener();
+        initDB();
         initmap();
         initButtons();
-        initDB();
     }
 
     public void startTracking() {
@@ -99,6 +101,10 @@ public class MapsActivity extends AppCompatActivity implements
             gotoLocation(getCurrentLocation());
             route = new ArrayList<>();
             route.add(getCurrentLocation());
+            latRoute = new ArrayList<>();
+            longRoute = new ArrayList<>();
+            latRoute.add(getCurrentLocation().latitude);
+            longRoute.add(getCurrentLocation().longitude);
             timer = new Timer();
             count = 0;
             timer.scheduleAtFixedRate(new TimerTask() {
@@ -109,6 +115,8 @@ public class MapsActivity extends AppCompatActivity implements
                         count++;
                         if(count == 5) {gotoLocation(current); count = 0;}
                         route.add(current);
+                        latRoute.add(current.latitude);
+                        longRoute.add(current.longitude);
                         results = new float[3];
                         Location.distanceBetween(current.latitude, current.longitude, route.get(route.size() - 1).latitude, route.get(route.size() - 1).longitude, results);
                         length += results[0];
@@ -133,14 +141,15 @@ public class MapsActivity extends AppCompatActivity implements
                 unit = "km";
             }
             else unit = "m";
+            dbRoute = routeDAO.getAll();
             Route route = new Route();
             route.id = dbRoute.size() + 1;
             route.date = new Date(System.currentTimeMillis());
             route.length = length;
             route.timeLength = new Date((long) (System.currentTimeMillis() - timeLength));
+            route.latPoints = latRoute;
+            route.longPoints = longRoute;
             routeDAO.insertRoute(route);
-            dbRoute = routeDAO.getAll();
-            Log.i("db", "" + dbRoute.get(dbRoute.size()-1));
         }
     }
 
@@ -167,7 +176,27 @@ public class MapsActivity extends AppCompatActivity implements
         mLocationClient = new FusedLocationProviderClient(this);
         checkPermission();
         mMap.setMyLocationEnabled(true);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(50, 15.5), 6));
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+            Integer id = extras.getInt("id");
+            Route route = dbRoute.get(id);
+            ArrayList<LatLng> routeList = new ArrayList<>();
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(route.latPoints.get(route.latPoints.size()/2), route.longPoints.get(route.longPoints.size()/2)), 18));
+            mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+            for(int i = 0; i < route.latPoints.size(); i++){
+                routeList.add(new LatLng(route.latPoints.get(i), route.longPoints.get(i)));
+            }
+            PolylineOptions polylineOptions = new PolylineOptions()
+                    .addAll(routeList)
+                    .color(Color.RED)
+                    .startCap(new RoundCap())
+                    .endCap(new RoundCap());
+            Polyline polyline = mMap.addPolyline(polylineOptions);
+        }
+        else {
+
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(50, 15.5), 6));
+        }
         mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
         LatLng first = getCurrentLocation();
     }

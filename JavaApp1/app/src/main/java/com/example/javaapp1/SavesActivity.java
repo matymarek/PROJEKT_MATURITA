@@ -59,22 +59,26 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
     }
 
     public void listDB() {
-        //List<Route> route = routeDAO.getAll();
-        ArrayList<Route> routes = new ArrayList<Route>();
-        for(int i = 1; i < 100; i++){
-            Route route = new Route();
-            route.id = i;
-            route.date = new Date(System.currentTimeMillis());
-            route.length = i*10;
-            route.timeLength = new Date(System.currentTimeMillis() - i*1000000);
-            routes.add(route);
-        }
+        List<Route> routes = routeDAO.getAll();
+//        ArrayList<Route> routes = new ArrayList<Route>();
+//        for(int i = 1; i < 100; i++){
+//            Route route = new Route();
+//            route.id = i;
+//            route.date = new Date(System.currentTimeMillis());
+//            route.length = i*10;
+//            route.timeLength = new Date(System.currentTimeMillis() - i*1000000);
+//            route.longPoints = new ArrayList<Double>();
+//            route.latPoints = new ArrayList<Double>();
+//            routes.add(route);
+//        }
         for(int i = 0; i < routes.size(); i++) {
             TableRow row = new TableRow(SavesActivity.this);
             TableRow.LayoutParams params = new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT,
                     WRAP_CONTENT);
             row.setWeightSum(5f);
-            params.topMargin = 15;
+            int finalI = i;
+            row.setOnClickListener(view -> showMap(finalI));
+            params.topMargin = 25;
             row.setLayoutParams(params);
             row.setOrientation(TableRow.VERTICAL);
 
@@ -114,6 +118,12 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
             row.addView(time);
             dataContainer.addView(row);
         }
+    }
+
+    private void showMap(int i) {
+        Intent intent = new Intent(SavesActivity.this, MapsActivity.class);
+        intent.putExtra("id", i);
+        startActivity(intent);
     }
 
     public void setNavigationViewListener() {

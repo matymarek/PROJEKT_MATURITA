@@ -51,6 +51,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 public class MapsActivity extends AppCompatActivity implements
         OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
@@ -72,7 +73,7 @@ public class MapsActivity extends AppCompatActivity implements
     Timer timer;
 
     double length;
-    double timeLength;
+    Long timeLength;
     String unit;
     RouteDAO routeDAO;
     List<Route> dbRoute;
@@ -146,7 +147,7 @@ public class MapsActivity extends AppCompatActivity implements
             route.id = dbRoute.size() + 1;
             route.date = new Date(System.currentTimeMillis());
             route.length = length;
-            route.timeLength = new Date((long) (System.currentTimeMillis() - timeLength));
+            route.timeLength = new Date(TimeUnit.MILLISECONDS.toMillis(System.currentTimeMillis() - timeLength));
             route.latPoints = latRoute;
             route.longPoints = longRoute;
             routeDAO.insertRoute(route);

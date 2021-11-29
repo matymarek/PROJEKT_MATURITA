@@ -150,7 +150,6 @@ public class MapsActivity extends AppCompatActivity implements
         mLocationClient.getLastLocation().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 Location location = task.getResult();
-                Log.i("why", ""+task.getResult());
                 latitude = location.getLatitude();
                 longitude = location.getLongitude();
             }

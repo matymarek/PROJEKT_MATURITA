@@ -95,7 +95,7 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
 
             params = new TableRow.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, 0.95f);
             TextView time = new TextView(SavesActivity.this);
-            df = new SimpleDateFormat("hh:mm:ss,s");
+            df = new SimpleDateFormat("HH:mm:ss,s");
             time.setText(df.format(routes.get(i).timeLength));
             time.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
             time.setTextSize(15);

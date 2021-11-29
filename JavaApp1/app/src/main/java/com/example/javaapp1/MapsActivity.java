@@ -77,7 +77,7 @@ public class MapsActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         checkPermission();
-        com.example.javaapp1.databinding.ActivityMapsBinding binding = ActivityMapsBinding.inflate(getLayoutInflater());
+        ActivityMapsBinding binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         setNavigationViewListener();
         initDB();
@@ -150,6 +150,7 @@ public class MapsActivity extends AppCompatActivity implements
         mLocationClient.getLastLocation().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 Location location = task.getResult();
+                Log.i("why", ""+task.getResult());
                 latitude = location.getLatitude();
                 longitude = location.getLongitude();
             }
@@ -170,7 +171,7 @@ public class MapsActivity extends AppCompatActivity implements
         mMap.setMyLocationEnabled(true);
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
-            Integer id = extras.getInt("id");
+            int id = extras.getInt("id");
             Route route = dbRoute.get(id);
             ArrayList<LatLng> routeList = new ArrayList<>();
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(route.latPoints.get(route.latPoints.size()/2), route.longPoints.get(route.longPoints.size()/2)), 18));

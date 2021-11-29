@@ -1,10 +1,6 @@
 package com.example.javaapp1.db;
 
-import android.util.Log;
-
 import androidx.room.TypeConverter;
-
-import com.google.android.gms.maps.model.LatLng;
 
 import java.sql.Date;
 import java.util.ArrayList;

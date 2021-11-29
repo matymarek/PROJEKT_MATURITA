@@ -30,26 +30,26 @@
                     android:layout_height="wrap_content"
                     android:text="Filtry: "
                     android:textSize="15sp"
-                    android:layout_weight="1.75"
+                    android:layout_weight="1.1"
                     android:textAlignment="center" />
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Datum"
                     android:textSize="15sp"
-                    android:layout_weight="1.15"/>
+                    android:layout_weight="1.2"/>
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Délka"
                     android:textSize="15sp"
-                    android:layout_weight="1.05"/>
+                    android:layout_weight="1.2" />
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Čas"
                     android:textSize="15sp"
-                    android:layout_weight="0.95"/>
+                    android:layout_weight="1.5" />
             </TableRow>
         </LinearLayout>
     </ScrollView>

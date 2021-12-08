@@ -3,10 +3,12 @@ package com.example.javaapp1;
 import static androidx.core.content.PermissionChecker.PERMISSION_GRANTED;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Button;
@@ -40,6 +42,7 @@ import com.google.android.material.navigation.NavigationView;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -62,6 +65,7 @@ public class MapsActivity extends AppCompatActivity implements
     float[] results;
     int count;
     Timer timer;
+    TimeZone tz;
 
     double length;
     Long timeLength;
@@ -72,6 +76,8 @@ public class MapsActivity extends AppCompatActivity implements
     DrawerLayout drawerLayout;
     NavigationView navigationView;
     ActionBarDrawerToggle actionBarDrawerToggle;
+    PowerManager.WakeLock wl;
+    PowerManager pm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,13 +89,21 @@ public class MapsActivity extends AppCompatActivity implements
         initDB();
         initmap();
         initButtons();
+        initPM();
+        wl.acquire();
+    }
+    protected void onDestroy() {
+        super.onDestroy();
+        //wl.release();
     }
 
     public void startTracking() {
         if (!tracking) {
             tracking = true;
             length = 0;
-            timeLength = System.currentTimeMillis();
+            tz = TimeZone.getDefault();
+            timeLength = System.currentTimeMillis() + tz.getOffset(System.currentTimeMillis());
+            Log.i("TAG", "" + tz.getOffset(System.currentTimeMillis()));
             gotoLocation(getCurrentLocation());
             route = new ArrayList<>();
             route.add(getCurrentLocation());
@@ -104,13 +118,12 @@ public class MapsActivity extends AppCompatActivity implements
                 public void run() {
                     runOnUiThread(() -> {
                         LatLng current = getCurrentLocation();
-                        count++;
                         if(count == 5) {gotoLocation(current); count = 0;}
                         route.add(current);
                         latRoute.add(current.latitude);
                         longRoute.add(current.longitude);
                         results = new float[3];
-                        Location.distanceBetween(current.latitude, current.longitude, route.get(route.size() - 1).latitude, route.get(route.size() - 1).longitude, results);
+                        Location.distanceBetween(current.latitude, current.longitude, route.get(route.size() - 2).latitude, route.get(route.size() - 2).longitude, results);
                         length += results[0];
                         PolylineOptions polylineOptions = new PolylineOptions()
                                 .addAll(route)
@@ -128,16 +141,16 @@ public class MapsActivity extends AppCompatActivity implements
         if (tracking) {
             timer.cancel();
             tracking = false;
-            if (length > 1000) {
-                length /= 1000;
-                unit = "km";
-            }
-            else unit = "m";
+//            if (length > 1000) {
+//                length /= 1000;
+//                unit = "km";
+//            }
+//            else unit = "m";
             dbRoute = routeDAO.getAll();
             Route route = new Route();
             route.id = dbRoute.size() + 1;
             route.date = new Date(System.currentTimeMillis());
-            route.length = length;
+            route.length = Math.floor(length * 100) / 100;
             route.timeLength = new Date(TimeUnit.MILLISECONDS.toMillis(System.currentTimeMillis() - timeLength));
             route.latPoints = latRoute;
             route.longPoints = longRoute;
@@ -214,6 +227,11 @@ public class MapsActivity extends AppCompatActivity implements
                 AppDatabase.class, "Routes").allowMainThreadQueries().build();
         routeDAO = db.routeDAO();
         dbRoute = routeDAO.getAll();
+    }
+
+    public void initPM() {
+        pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "myapp:MyTag");
     }
 
     public void checkPermission() {

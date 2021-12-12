@@ -69,7 +69,6 @@ public class MapsActivity extends AppCompatActivity implements
 
     double length;
     Long timeLength;
-    String unit;
     RouteDAO routeDAO;
     List<Route> dbRoute;
 
@@ -89,12 +88,6 @@ public class MapsActivity extends AppCompatActivity implements
         initDB();
         initmap();
         initButtons();
-        initPM();
-        wl.acquire();
-    }
-    protected void onDestroy() {
-        super.onDestroy();
-        //wl.release();
     }
 
     public void startTracking() {
@@ -113,6 +106,8 @@ public class MapsActivity extends AppCompatActivity implements
             longRoute.add(getCurrentLocation().longitude);
             timer = new Timer();
             count = 0;
+            initPM();
+            wl.acquire();
             timer.scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
@@ -141,11 +136,6 @@ public class MapsActivity extends AppCompatActivity implements
         if (tracking) {
             timer.cancel();
             tracking = false;
-//            if (length > 1000) {
-//                length /= 1000;
-//                unit = "km";
-//            }
-//            else unit = "m";
             dbRoute = routeDAO.getAll();
             Route route = new Route();
             route.id = dbRoute.size() + 1;
@@ -155,6 +145,7 @@ public class MapsActivity extends AppCompatActivity implements
             route.latPoints = latRoute;
             route.longPoints = longRoute;
             routeDAO.insertRoute(route);
+            wl.release();
         }
     }
 
@@ -235,16 +226,35 @@ public class MapsActivity extends AppCompatActivity implements
     }
 
     public void checkPermission() {
-        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED) {
-            String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION};
-            requestPermissions(permissions, PERMISSION_GRANTED);
-            while(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED){
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        if (getApplicationContext().getApplicationInfo().targetSdkVersion >= 29) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PERMISSION_GRANTED) {
+                String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION};
+                requestPermissions(permissions, PERMISSION_GRANTED);
+                while (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
+                        ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED &&
+                        ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PERMISSION_GRANTED) {
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        else{
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED) {
+                String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION};
+                requestPermissions(permissions, PERMISSION_GRANTED);
+                while (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
+                        ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED) {
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }

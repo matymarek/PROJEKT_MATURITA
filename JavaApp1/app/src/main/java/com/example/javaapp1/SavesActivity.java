@@ -41,6 +41,7 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
     ActionBarDrawerToggle actionBarDrawerToggle;
     LinearLayout dataContainer;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -88,7 +89,13 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
 
             params = new TableRow.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, 1.05f);
             TextView length = new TextView(SavesActivity.this);
-            length.setText(""+routes.get(i).length);
+            if(routes.get(i).length > 1000) {
+                double kmLength = routes.get(i).length/1000;
+                length.setText(kmLength+"km");
+            }
+            else{
+                length.setText(routes.get(i).length+"m");
+            }
             length.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
             length.setTextSize(15);
             length.setLayoutParams(params);

@@ -12,6 +12,7 @@ import android.os.PowerManager;
 import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -108,6 +109,7 @@ public class MapsActivity extends AppCompatActivity implements
             count = 0;
             initPM();
             wl.acquire();
+            Toast.makeText(this, "Trasování zapnuto", Toast.LENGTH_LONG).show();
             timer.scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
@@ -135,6 +137,7 @@ public class MapsActivity extends AppCompatActivity implements
     public void stopTracking() {
         if (tracking) {
             timer.cancel();
+            Toast.makeText(this, "Trasování ukončeno", Toast.LENGTH_LONG).show();
             tracking = false;
             dbRoute = routeDAO.getAll();
             Route route = new Route();
@@ -146,6 +149,7 @@ public class MapsActivity extends AppCompatActivity implements
             route.longPoints = longRoute;
             routeDAO.insertRoute(route);
             wl.release();
+            Toast.makeText(this, "Trasa uložena", Toast.LENGTH_LONG).show();
         }
     }
 

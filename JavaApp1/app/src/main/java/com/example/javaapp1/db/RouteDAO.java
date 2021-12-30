@@ -13,8 +13,8 @@ public interface RouteDAO {
     @Query("SELECT * FROM route")
     List<Route> getAll();
 
-    @Query("SELECT * FROM route WHERE id IN (:routesIds)")
-    List<Route> loadAllByIds(int[] routesIds);
+    @Query("SELECT * FROM route WHERE id IN (:routeId)")
+    List<Route> loadById(int routeId);
 
     @Query("SELECT * FROM route WHERE track_date LIKE :date AND " +
             "track_length LIKE :length AND track_time LIKE :timeLength LIMIT 10")

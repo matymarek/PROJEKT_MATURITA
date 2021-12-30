@@ -12,7 +12,7 @@
         android:orientation="vertical">
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:id="@+id/data_container"
             android:orientation="vertical">
         <LinearLayout
@@ -28,7 +28,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Filtry: "
+                    android:text="Pořadí"
                     android:textSize="15sp"
                     android:layout_weight="1.1"
                     android:textAlignment="center" />
@@ -38,12 +38,13 @@
                     android:text="Datum"
                     android:textSize="15sp"
                     android:layout_weight="1.2"/>
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Délka"
-                    android:textSize="15sp"
-                    android:layout_weight="1.2" />
+                    android:layout_weight="1.2"
+                    android:text="Vzdálenost"
+                    android:textSize="15sp" />
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

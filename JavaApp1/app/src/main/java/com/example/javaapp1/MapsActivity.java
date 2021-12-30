@@ -15,19 +15,17 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.room.Room;
 
+import com.example.javaapp1.MessageBoxes.MessageBoxLocation;
 import com.example.javaapp1.databinding.ActivityMapsBinding;
 import com.example.javaapp1.db.AppDatabase;
 import com.example.javaapp1.db.Route;
 import com.example.javaapp1.db.RouteDAO;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -49,8 +47,7 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 public class MapsActivity extends AppCompatActivity implements
-        OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
-        NavigationView.OnNavigationItemSelectedListener {
+        OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener {
 
     GoogleMap mMap;
     ArrayList<LatLng> route;
@@ -63,6 +60,9 @@ public class MapsActivity extends AppCompatActivity implements
     boolean tracking;
     double longitude;
     double latitude;
+    double altitude;
+    double altitudeMin;
+    double altitudeMax;
     float[] results;
     int count;
     Timer timer;
@@ -97,14 +97,14 @@ public class MapsActivity extends AppCompatActivity implements
             length = 0;
             tz = TimeZone.getDefault();
             timeLength = System.currentTimeMillis() + tz.getOffset(System.currentTimeMillis());
-            Log.i("TAG", "" + tz.getOffset(System.currentTimeMillis()));
             gotoLocation(getCurrentLocation());
             route = new ArrayList<>();
             route.add(getCurrentLocation());
+            altitudeMin = altitudeMax = altitude;
             latRoute = new ArrayList<>();
             longRoute = new ArrayList<>();
-            latRoute.add(getCurrentLocation().latitude);
-            longRoute.add(getCurrentLocation().longitude);
+            latRoute.add(route.get(0).latitude);
+            longRoute.add(route.get(0).longitude);
             timer = new Timer();
             count = 0;
             initPM();
@@ -117,6 +117,8 @@ public class MapsActivity extends AppCompatActivity implements
                         LatLng current = getCurrentLocation();
                         if(count == 5) {gotoLocation(current); count = 0;}
                         route.add(current);
+                        if(altitude > altitudeMax) altitudeMax = altitude;
+                        else if(altitude < altitudeMin) altitudeMin = altitude;
                         latRoute.add(current.latitude);
                         longRoute.add(current.longitude);
                         results = new float[3];
@@ -145,6 +147,7 @@ public class MapsActivity extends AppCompatActivity implements
             route.date = new Date(System.currentTimeMillis());
             route.length = Math.floor(length * 100) / 100;
             route.timeLength = new Date(TimeUnit.MILLISECONDS.toMillis(System.currentTimeMillis() - timeLength));
+            route.elevation = altitudeMax - altitudeMin;
             route.latPoints = latRoute;
             route.longPoints = longRoute;
             routeDAO.insertRoute(route);
@@ -158,8 +161,17 @@ public class MapsActivity extends AppCompatActivity implements
         mLocationClient.getLastLocation().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 Location location = task.getResult();
-                latitude = location.getLatitude();
-                longitude = location.getLongitude();
+                if(location != null) {
+                    latitude = location.getLatitude();
+                    longitude = location.getLongitude();
+                    altitude = location.getAltitude();
+                }
+                else {
+                    MessageBoxLocation box = new MessageBoxLocation();
+                    box.show(getSupportFragmentManager(), "Location is null");
+                    Button2.setOnClickListener(null);
+                    Button3.setOnClickListener(null);
+                }
             }
         });
         return new LatLng(latitude, longitude);
@@ -176,27 +188,7 @@ public class MapsActivity extends AppCompatActivity implements
         mLocationClient = new FusedLocationProviderClient(this);
         checkPermission();
         mMap.setMyLocationEnabled(true);
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            int id = extras.getInt("id");
-            Route route = dbRoute.get(id);
-            ArrayList<LatLng> routeList = new ArrayList<>();
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(route.latPoints.get(route.latPoints.size()/2), route.longPoints.get(route.longPoints.size()/2)), 18));
-            mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
-            for(int i = 0; i < route.latPoints.size(); i++){
-                routeList.add(new LatLng(route.latPoints.get(i), route.longPoints.get(i)));
-            }
-            PolylineOptions polylineOptions = new PolylineOptions()
-                    .addAll(routeList)
-                    .color(Color.RED)
-                    .startCap(new RoundCap())
-                    .endCap(new RoundCap());
-            Polyline polyline = mMap.addPolyline(polylineOptions);
-        }
-        else {
-
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(50, 15.5), 6));
-        }
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(50, 15.5), 6));
         mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
         LatLng first = getCurrentLocation();
     }
@@ -240,7 +232,7 @@ public class MapsActivity extends AppCompatActivity implements
                         ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED &&
                         ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PERMISSION_GRANTED) {
                     try {
-                        Thread.sleep(2000);
+                        Thread.sleep(1000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -255,7 +247,7 @@ public class MapsActivity extends AppCompatActivity implements
                 while (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
                         ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED) {
                     try {
-                        Thread.sleep(2000);
+                        Thread.sleep(1000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -294,17 +286,5 @@ public class MapsActivity extends AppCompatActivity implements
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    public void onConnected(@Nullable Bundle bundle) {
-
-    }
-
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
     }
 }

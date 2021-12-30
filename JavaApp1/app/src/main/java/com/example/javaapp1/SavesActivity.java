@@ -1,21 +1,25 @@
 package com.example.javaapp1;
 
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+import static androidx.core.content.PermissionChecker.PERMISSION_GRANTED;
 
+import android.Manifest;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
-import android.view.ScrollCaptureCallback;
 import android.view.View;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
+import android.widget.PopupWindow;
 import android.widget.TableRow;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.room.Room;
 
@@ -23,15 +27,21 @@ import com.example.javaapp1.databinding.ActivitySavesBinding;
 import com.example.javaapp1.db.AppDatabase;
 import com.example.javaapp1.db.Route;
 import com.example.javaapp1.db.RouteDAO;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.maps.model.RoundCap;
 import com.google.android.material.navigation.NavigationView;
 
-import java.sql.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 
 public class SavesActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -40,7 +50,8 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
     NavigationView navigationView;
     ActionBarDrawerToggle actionBarDrawerToggle;
     LinearLayout dataContainer;
-
+    int finalI;
+    List<Route> dbRoute;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +67,7 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
         AppDatabase db = Room.databaseBuilder(getApplicationContext(),
                 AppDatabase.class, "Routes").allowMainThreadQueries().build();
         routeDAO = db.routeDAO();
+        dbRoute = routeDAO.getAll();
         dataContainer = findViewById(R.id.data_container);
     }
 
@@ -66,8 +78,8 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
             TableRow.LayoutParams params = new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT,
                     WRAP_CONTENT);
             row.setWeightSum(5f);
-            int finalI = i;
-            row.setOnClickListener(view -> showMap(finalI));
+            finalI = i; //protože i musí být final kvůli dalšímu řádku
+            row.setOnClickListener(view -> showDetail(finalI));
             params.topMargin = 25;
             row.setLayoutParams(params);
             row.setOrientation(TableRow.VERTICAL);
@@ -102,7 +114,8 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
 
             params = new TableRow.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, 0.95f);
             TextView time = new TextView(SavesActivity.this);
-            df = new SimpleDateFormat("HH:mm:ss,s");
+            if (routes.get(i).timeLength.getTime() > 3600000) { df = new SimpleDateFormat("HH:mm:ss,s"); }
+            else { df = new SimpleDateFormat("mm:ss,s"); }
             time.setText(df.format(routes.get(i).timeLength));
             time.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
             time.setTextSize(15);
@@ -116,9 +129,9 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
         }
     }
 
-    private void showMap(int i) {
-        Intent intent = new Intent(SavesActivity.this, MapsActivity.class);
-        intent.putExtra("id", i);
+    private void showDetail(int finalI) {
+        Intent intent = new Intent(SavesActivity.this, DetailActivity.class);
+        intent.putExtra("id", finalI);
         startActivity(intent);
     }
 
@@ -133,7 +146,6 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
     }
 
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        Log.i("item", "" + item.getItemId());
         if (item.getItemId() == R.id.nav_track) {
             Intent intent = new Intent(SavesActivity.this, MapsActivity.class);
             startActivity(intent);
@@ -155,3 +167,4 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
         return super.onOptionsItemSelected(item);
     }
 }
+

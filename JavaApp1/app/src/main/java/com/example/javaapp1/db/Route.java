@@ -19,6 +19,8 @@ public class Route {
     public double length;
     @ColumnInfo(name = "track_time")
     public Date timeLength;
+    @ColumnInfo(name = "track_elevation")
+    public double elevation;
     @ColumnInfo(name = "track_points_lat")
     public ArrayList<Double> latPoints;
     @ColumnInfo(name = "track_points_long")

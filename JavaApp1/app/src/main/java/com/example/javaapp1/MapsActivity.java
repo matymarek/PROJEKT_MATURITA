@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.util.Log;
@@ -21,7 +22,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.room.Room;
 
-import com.example.javaapp1.MessageBoxes.MessageBoxLocation;
+import com.example.javaapp1.MessageBoxes.MessageBoxNoLocation;
 import com.example.javaapp1.databinding.ActivityMapsBinding;
 import com.example.javaapp1.db.AppDatabase;
 import com.example.javaapp1.db.Route;
@@ -38,6 +39,15 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.RoundCap;
 import com.google.android.material.navigation.NavigationView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +55,12 @@ import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class MapsActivity extends AppCompatActivity implements
         OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener {
@@ -60,13 +76,15 @@ public class MapsActivity extends AppCompatActivity implements
     boolean tracking;
     double longitude;
     double latitude;
-    double altitude;
-    double altitudeMin;
-    double altitudeMax;
+    double elevation;
+    double elevationMin;
+    double elevationMax;
     float[] results;
     int count;
+    int color;
     Timer timer;
     TimeZone tz;
+
 
     double length;
     Long timeLength;
@@ -86,6 +104,7 @@ public class MapsActivity extends AppCompatActivity implements
         ActivityMapsBinding binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         setNavigationViewListener();
+        readFromFile(getApplicationContext());
         initDB();
         initmap();
         initButtons();
@@ -100,7 +119,7 @@ public class MapsActivity extends AppCompatActivity implements
             gotoLocation(getCurrentLocation());
             route = new ArrayList<>();
             route.add(getCurrentLocation());
-            altitudeMin = altitudeMax = altitude;
+            elevationMin = elevationMax = elevation;
             latRoute = new ArrayList<>();
             longRoute = new ArrayList<>();
             latRoute.add(route.get(0).latitude);
@@ -117,8 +136,6 @@ public class MapsActivity extends AppCompatActivity implements
                         LatLng current = getCurrentLocation();
                         if(count == 5) {gotoLocation(current); count = 0;}
                         route.add(current);
-                        if(altitude > altitudeMax) altitudeMax = altitude;
-                        else if(altitude < altitudeMin) altitudeMin = altitude;
                         latRoute.add(current.latitude);
                         longRoute.add(current.longitude);
                         results = new float[3];
@@ -126,10 +143,12 @@ public class MapsActivity extends AppCompatActivity implements
                         length += results[0];
                         PolylineOptions polylineOptions = new PolylineOptions()
                                 .addAll(route)
-                                .color(Color.RED)
+                                .color(color)
                                 .startCap(new RoundCap())
                                 .endCap(new RoundCap());
                         Polyline polyline = mMap.addPolyline(polylineOptions);
+                        if(elevation >elevationMax) elevationMax = elevation;
+                        else if(elevation < elevationMin) elevationMin = elevation;
                     });
                 }
             }, 500, 500);
@@ -145,9 +164,9 @@ public class MapsActivity extends AppCompatActivity implements
             Route route = new Route();
             route.id = dbRoute.size() + 1;
             route.date = new Date(System.currentTimeMillis());
-            route.length = Math.floor(length * 100) / 100;
+            route.length = Math.round(length * 100) / 100;
             route.timeLength = new Date(TimeUnit.MILLISECONDS.toMillis(System.currentTimeMillis() - timeLength));
-            route.elevation = altitudeMax - altitudeMin;
+            route.elevation = Math.round((elevationMax - elevationMin) * 100) / 100;
             route.latPoints = latRoute;
             route.longPoints = longRoute;
             routeDAO.insertRoute(route);
@@ -164,10 +183,10 @@ public class MapsActivity extends AppCompatActivity implements
                 if(location != null) {
                     latitude = location.getLatitude();
                     longitude = location.getLongitude();
-                    altitude = location.getAltitude();
+                    requestElevation(latitude, longitude);
                 }
                 else {
-                    MessageBoxLocation box = new MessageBoxLocation();
+                    MessageBoxNoLocation box = new MessageBoxNoLocation();
                     box.show(getSupportFragmentManager(), "Location is null");
                     Button2.setOnClickListener(null);
                     Button3.setOnClickListener(null);
@@ -175,6 +194,33 @@ public class MapsActivity extends AppCompatActivity implements
             }
         });
         return new LatLng(latitude, longitude);
+    }
+
+    public void requestElevation(double latitude, double longitude){
+        final double[] res = {0.0};
+        OkHttpClient client = new OkHttpClient().newBuilder().build();
+        Request request = new Request.Builder()
+                .url("https://maps.googleapis.com/maps/api/elevation/json?locations="+latitude+"%2C"+longitude+"&key="+getString(R.string.Api_key))
+                .method("GET", null)
+                .build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {}
+            @Override
+            public void onResponse(Call call, Response response) throws IOException { ;
+                String json = response.body().string();
+                try {
+                    JSONObject reader = new JSONObject(json);
+                    JSONArray results = reader.getJSONArray("results");
+                    JSONObject result = results.getJSONObject(0);
+                    res[0] = result.getDouble("elevation");
+                    Log.i("elevation", ""+res[0]);
+                    elevation = res[0];
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     public void gotoLocation(LatLng current) {
@@ -191,6 +237,41 @@ public class MapsActivity extends AppCompatActivity implements
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(50, 15.5), 6));
         mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
         LatLng first = getCurrentLocation();
+    }
+
+    private void readFromFile(Context context) {
+        try {
+            InputStream inputStream = context.openFileInput("config.txt");
+            if ( inputStream != null ) {
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                String receiveString;
+                StringBuilder stringBuilder = new StringBuilder();
+                if ((receiveString = bufferedReader.readLine()) != null ) { stringBuilder.append(receiveString); }
+                inputStream.close();
+                switch (stringBuilder.toString()) {
+                    case "červená": {
+                        color = Color.RED;
+                        break;
+                    }
+                    case "zelená": {
+                        color = Color.GREEN;
+                        break;
+                    }
+                    case "modrá": {
+                        color = Color.BLUE;
+                        break;
+                    }
+                    case "černá": {
+                        color = Color.BLACK;
+                        break;
+                    }
+                    default: { color = Color.RED; }
+                }
+            }
+        }
+        catch (FileNotFoundException e) { Log.e("login activity", "File not found: " + e.toString()); color = Color.RED;}
+        catch (IOException e) { Log.e("login activity", "Can not read file: " + e.toString()); }
     }
 
     public void initmap() {
@@ -222,7 +303,7 @@ public class MapsActivity extends AppCompatActivity implements
     }
 
     public void checkPermission() {
-        if (getApplicationContext().getApplicationInfo().targetSdkVersion >= 29) {
+        if (Build.VERSION.SDK_INT >= 29) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
                     ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED &&
                     ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PERMISSION_GRANTED) {
@@ -232,7 +313,7 @@ public class MapsActivity extends AppCompatActivity implements
                         ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED &&
                         ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PERMISSION_GRANTED) {
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(200);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -247,7 +328,7 @@ public class MapsActivity extends AppCompatActivity implements
                 while (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
                         ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED) {
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(200);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -267,7 +348,6 @@ public class MapsActivity extends AppCompatActivity implements
     }
 
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        Log.i("item", "" + item.getItemId());
         if (item.getItemId() == R.id.nav_track) {
             Intent intent = new Intent(MapsActivity.this, MapsActivity.class);
             startActivity(intent);

@@ -1,30 +1,33 @@
 package com.example.javaapp1;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
+import android.widget.Button;
+import android.widget.Switch;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.room.Room;
 
+import com.example.javaapp1.MessageBoxes.MessageBoxNewColor;
 import com.example.javaapp1.databinding.ActivitySettingsBinding;
-import com.example.javaapp1.db.AppDatabase;
-import com.example.javaapp1.db.RouteDAO;
 import com.google.android.material.navigation.NavigationView;
+
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 
 public class SettingsActivity extends AppCompatActivity implements  NavigationView.OnNavigationItemSelectedListener {
 
-    RouteDAO routeDAO;
     DrawerLayout drawerLayout;
     ActionBarDrawerToggle actionBarDrawerToggle;
     NavigationView navigationView;
+    Button btn;
+    Switch swtch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,13 +35,46 @@ public class SettingsActivity extends AppCompatActivity implements  NavigationVi
         com.example.javaapp1.databinding.ActivitySettingsBinding binding = ActivitySettingsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         setNavigationViewListener();
-        initDB();
+        init();
     }
 
-    public void initDB() {
-        AppDatabase db = Room.databaseBuilder(getApplicationContext(),
-                AppDatabase.class, "Routes").allowMainThreadQueries().build();
-        routeDAO = db.routeDAO();
+    public void init(){
+        btn = findViewById(R.id.btn);
+        btn.setOnClickListener(view->changeColor());
+        swtch = findViewById(R.id.swtch);
+        swtch.setChecked(true);
+        swtch.setOnClickListener(view->autosave());
+        swtch.setEnabled(false); //autosave nefunguje
+    }
+
+    public void autosave(){
+        if(swtch.isChecked()){
+            Toast.makeText(getApplicationContext(), "Automatické ukládání vypnuto", Toast.LENGTH_LONG).show();
+            try {
+                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(getApplicationContext().openFileOutput("config.txt", Context.MODE_PRIVATE));
+                outputStreamWriter.write("\nautosaveoff", 10, 50);
+                outputStreamWriter.close();
+            }
+            catch (IOException e) {
+                Log.e("Exception", "File write failed: " + e.toString());
+            }
+        }
+        else{
+            Toast.makeText(getApplicationContext(), "Automatické ukládání zapnuto", Toast.LENGTH_LONG).show();
+            try {
+                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(getApplicationContext().openFileOutput("config.txt", Context.MODE_PRIVATE));
+                outputStreamWriter.write("\nautosaveon", 10, 50);
+                outputStreamWriter.close();
+            }
+            catch (IOException e) {
+                Log.e("Exception", "File write failed: " + e.toString());
+            }
+        }
+    }
+
+    public void changeColor(){
+        MessageBoxNewColor box = new MessageBoxNewColor();
+        box.show(getFragmentManager(), "Změna barvy");
     }
 
     public void setNavigationViewListener() {

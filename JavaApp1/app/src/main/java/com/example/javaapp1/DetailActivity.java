@@ -10,9 +10,12 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.room.Room;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
@@ -32,6 +35,11 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.RoundCap;
 import com.google.android.material.navigation.NavigationView;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -49,6 +57,7 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
     NavigationView navigationView;
     ActionBarDrawerToggle actionBarDrawerToggle;
     int id;
+    int color;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,12 +65,11 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
         com.example.javaapp1.databinding.ActivityDetailBinding binding = com.example.javaapp1.databinding.ActivityDetailBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         setNavigationViewListener();
+        readFromFile(getApplicationContext());
         initDB();
         initmap();
         initBttn();
     }
-
-
 
     public void showDetail(int id) {
         Route route = dbRoute.get(id);
@@ -89,7 +97,7 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
 
         PolylineOptions polylineOptions = new PolylineOptions()
                 .addAll(routeList)
-                .color(Color.RED)
+                .color(color)
                 .startCap(new RoundCap())
                 .endCap(new RoundCap());
         Polyline polyline = mMap.addPolyline(polylineOptions);
@@ -99,6 +107,41 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.popupMap);
         mapFragment.getMapAsync(this);
+    }
+
+    private void readFromFile(Context context) {
+        try {
+            InputStream inputStream = context.openFileInput("config.txt");
+            if ( inputStream != null ) {
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                String receiveString;
+                StringBuilder stringBuilder = new StringBuilder();
+                if ((receiveString = bufferedReader.readLine()) != null ) { stringBuilder.append(receiveString); }
+                inputStream.close();
+                switch (stringBuilder.toString()) {
+                    case "červená": {
+                        color = Color.RED;
+                        break;
+                    }
+                    case "zelená": {
+                        color = Color.GREEN;
+                        break;
+                    }
+                    case "modrá": {
+                        color = Color.BLUE;
+                        break;
+                    }
+                    case "černá": {
+                        color = Color.BLACK;
+                        break;
+                    }
+                    default: { color = Color.RED; }
+                }
+            }
+        }
+        catch (FileNotFoundException e) { Log.e("login activity", "File not found: " + e.toString()); color = Color.RED;}
+        catch (IOException e) { Log.e("login activity", "Can not read file: " + e.toString()); }
     }
 
     public void initDB() {
@@ -135,7 +178,7 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
     }
 
     public void checkPermission() {
-        if (getApplicationContext().getApplicationInfo().targetSdkVersion >= 29) {
+        if (Build.VERSION.SDK_INT >= 29) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
                     ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED &&
                     ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PERMISSION_GRANTED) {
@@ -145,7 +188,7 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
                         ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED &&
                         ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PERMISSION_GRANTED) {
                     try {
-                        Thread.sleep(2000);
+                        Thread.sleep(200);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -160,7 +203,7 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
                 while (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
                         ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED) {
                     try {
-                        Thread.sleep(2000);
+                        Thread.sleep(200);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }

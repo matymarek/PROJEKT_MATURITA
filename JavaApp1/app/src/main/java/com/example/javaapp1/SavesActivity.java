@@ -1,25 +1,18 @@
 package com.example.javaapp1;
 
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
-import static androidx.core.content.PermissionChecker.PERMISSION_GRANTED;
 
-import android.Manifest;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
-import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
-import android.widget.PopupWindow;
 import android.widget.TableRow;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.room.Room;
 
@@ -27,20 +20,10 @@ import com.example.javaapp1.databinding.ActivitySavesBinding;
 import com.example.javaapp1.db.AppDatabase;
 import com.example.javaapp1.db.Route;
 import com.example.javaapp1.db.RouteDAO;
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.android.gms.maps.model.RoundCap;
 import com.google.android.material.navigation.NavigationView;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.List;
 
 public class SavesActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {

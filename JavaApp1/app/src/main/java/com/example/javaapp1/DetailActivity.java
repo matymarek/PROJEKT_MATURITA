@@ -35,6 +35,9 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.RoundCap;
 import com.google.android.material.navigation.NavigationView;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -56,6 +59,7 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
     DrawerLayout drawerLayout;
     NavigationView navigationView;
     ActionBarDrawerToggle actionBarDrawerToggle;
+    int mapType;
     int id;
     int color;
 
@@ -112,36 +116,64 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
     private void readFromFile(Context context) {
         try {
             InputStream inputStream = context.openFileInput("config.txt");
-            if ( inputStream != null ) {
+            String json;
+            if (inputStream != null) {
                 InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
                 BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
                 String receiveString;
                 StringBuilder stringBuilder = new StringBuilder();
-                if ((receiveString = bufferedReader.readLine()) != null ) { stringBuilder.append(receiveString); }
-                inputStream.close();
-                switch (stringBuilder.toString()) {
-                    case "červená": {
-                        color = Color.RED;
-                        break;
-                    }
-                    case "zelená": {
-                        color = Color.GREEN;
-                        break;
-                    }
-                    case "modrá": {
-                        color = Color.BLUE;
-                        break;
-                    }
-                    case "černá": {
-                        color = Color.BLACK;
-                        break;
-                    }
-                    default: { color = Color.RED; }
+                while ((receiveString = bufferedReader.readLine()) != null) {
+                    stringBuilder.append("\n").append(receiveString);
                 }
+                inputStream.close();
+                json = stringBuilder.toString();
             }
+            else {
+                json = new JSONObject("{\"barva\":\"červená\",\"autosave\":\"1\",\"mapType\":\"turistická\"}").toString();
+            }
+            JSONObject reader = new JSONObject(json);
+            switch (reader.getString("barva")) {
+                case "červená": {
+                    color = Color.RED;
+                    break;
+                }
+                case "zelená": {
+                    color = Color.GREEN;
+                    break;
+                }
+                case "modrá": {
+                    color = Color.BLUE;
+                    break;
+                }
+                case "černá": {
+                    color = Color.BLACK;
+                    break;
+                }
+                default: { color = Color.RED; }
+            }
+            switch (reader.getString("mapType")) {
+                case "satelitní": {
+                    mapType = GoogleMap.MAP_TYPE_SATELLITE;
+                    break;
+                }
+                case "hybridní": {
+                    mapType = GoogleMap.MAP_TYPE_HYBRID;
+                    break;
+                }
+                case "turistická": {
+                    mapType = GoogleMap.MAP_TYPE_TERRAIN;
+                    break;
+                }
+                case "normální": {
+                    mapType = GoogleMap.MAP_TYPE_NORMAL;
+                    break;
+                }
+                default: { mapType = GoogleMap.MAP_TYPE_TERRAIN; }
+            };
         }
         catch (FileNotFoundException e) { Log.e("login activity", "File not found: " + e.toString()); color = Color.RED;}
         catch (IOException e) { Log.e("login activity", "Can not read file: " + e.toString()); }
+        catch (JSONException e) { e.printStackTrace(); }
     }
 
     public void initDB() {

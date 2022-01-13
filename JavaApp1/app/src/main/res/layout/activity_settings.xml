@@ -26,9 +26,15 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="Typ mapy"
+                android:textSize="20dp"
+                android:layout_marginTop="23dp"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Automatické ukládání"
                 android:textSize="20dp"
-                android:layout_marginTop="15dp"/>
+                android:layout_marginTop="23dp"/>
         </LinearLayout>
         <LinearLayout
             android:layout_width="wrap_content"
@@ -45,11 +51,16 @@
                 android:layout_height="wrap_content"
                 android:text="Vybrat"
                 android:id="@+id/btn"/>
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vybrat"
+                android:id="@+id/btn2"/>
             <Switch
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:layout_marginTop="5dp"
+                android:layout_marginTop="13dp"
                 android:id="@+id/swtch"/>
         </LinearLayout>
     </LinearLayout>

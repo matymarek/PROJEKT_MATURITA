@@ -22,7 +22,9 @@ import androidx.core.app.ActivityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.room.Room;
 
+import com.example.javaapp1.MessageBoxes.MessageBoxNewColor;
 import com.example.javaapp1.MessageBoxes.MessageBoxNoLocation;
+import com.example.javaapp1.MessageBoxes.MessageBoxSaveRoute;
 import com.example.javaapp1.databinding.ActivityMapsBinding;
 import com.example.javaapp1.db.AppDatabase;
 import com.example.javaapp1.db.Route;
@@ -48,6 +50,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,6 +85,8 @@ public class MapsActivity extends AppCompatActivity implements
     float[] results;
     int count;
     int color;
+    int autosave;
+    int mapType;
     Timer timer;
     TimeZone tz;
 
@@ -141,12 +146,14 @@ public class MapsActivity extends AppCompatActivity implements
                         results = new float[3];
                         Location.distanceBetween(current.latitude, current.longitude, route.get(route.size() - 2).latitude, route.get(route.size() - 2).longitude, results);
                         length += results[0];
+                        Log.i("length", ""+length);
                         PolylineOptions polylineOptions = new PolylineOptions()
                                 .addAll(route)
                                 .color(color)
                                 .startCap(new RoundCap())
                                 .endCap(new RoundCap());
                         Polyline polyline = mMap.addPolyline(polylineOptions);
+                        Log.i("elevation", ""+elevation);
                         if(elevation >elevationMax) elevationMax = elevation;
                         else if(elevation < elevationMin) elevationMin = elevation;
                     });
@@ -164,14 +171,20 @@ public class MapsActivity extends AppCompatActivity implements
             Route route = new Route();
             route.id = dbRoute.size() + 1;
             route.date = new Date(System.currentTimeMillis());
-            route.length = Math.round(length * 100) / 100;
+            route.length = Math.round(length*100)/100.00;
             route.timeLength = new Date(TimeUnit.MILLISECONDS.toMillis(System.currentTimeMillis() - timeLength));
-            route.elevation = Math.round((elevationMax - elevationMin) * 100) / 100;
+            route.elevation = Math.round((elevationMax - elevationMin) * 100)/100.00;
             route.latPoints = latRoute;
             route.longPoints = longRoute;
-            routeDAO.insertRoute(route);
+            if(autosave == 1) {
+                routeDAO.insertRoute(route);
+                Toast.makeText(this, "Trasa uložena", Toast.LENGTH_LONG).show();
+            }
+            else {
+                MessageBoxSaveRoute box = new MessageBoxSaveRoute(routeDAO, route);
+                box.show(getSupportFragmentManager(), "Save Route");
+            }
             wl.release();
-            Toast.makeText(this, "Trasa uložena", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -214,7 +227,6 @@ public class MapsActivity extends AppCompatActivity implements
                     JSONArray results = reader.getJSONArray("results");
                     JSONObject result = results.getJSONObject(0);
                     res[0] = result.getDouble("elevation");
-                    Log.i("elevation", ""+res[0]);
                     elevation = res[0];
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -235,43 +247,86 @@ public class MapsActivity extends AppCompatActivity implements
         checkPermission();
         mMap.setMyLocationEnabled(true);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(50, 15.5), 6));
-        mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+        mMap.setMapType(mapType);
         LatLng first = getCurrentLocation();
     }
 
     private void readFromFile(Context context) {
         try {
-            InputStream inputStream = context.openFileInput("config.txt");
-            if ( inputStream != null ) {
+            InputStream inputStream = null;
+            try{
+                inputStream = context.openFileInput("config.txt");
+            }
+            catch (FileNotFoundException e){
+                String newJson = new JSONObject("{\"barva\":\"červená\",\"autosave\":\"1\",\"mapType\":\"turistická\"}").toString();
+                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(getApplicationContext().openFileOutput("config.txt", Context.MODE_PRIVATE));
+                outputStreamWriter.write(newJson);
+                outputStreamWriter.close();
+            } finally {
+                if(inputStream == null) {inputStream = context.openFileInput("config.txt");}
+            }
+            String json;
+            if (inputStream != null) {
                 InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
                 BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
                 String receiveString;
                 StringBuilder stringBuilder = new StringBuilder();
-                if ((receiveString = bufferedReader.readLine()) != null ) { stringBuilder.append(receiveString); }
-                inputStream.close();
-                switch (stringBuilder.toString()) {
-                    case "červená": {
-                        color = Color.RED;
-                        break;
-                    }
-                    case "zelená": {
-                        color = Color.GREEN;
-                        break;
-                    }
-                    case "modrá": {
-                        color = Color.BLUE;
-                        break;
-                    }
-                    case "černá": {
-                        color = Color.BLACK;
-                        break;
-                    }
-                    default: { color = Color.RED; }
+                while ((receiveString = bufferedReader.readLine()) != null) {
+                    stringBuilder.append("\n").append(receiveString);
                 }
+                inputStream.close();
+                json = stringBuilder.toString();
             }
+            else {
+                json = new JSONObject("{\"barva\":\"červená\",\"autosave\":\"1\",\"mapType\":\"turistická\"}").toString();
+                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(getApplicationContext().openFileOutput("config.txt", Context.MODE_PRIVATE));
+                outputStreamWriter.write(json);
+                outputStreamWriter.close();
+            }
+            JSONObject reader = new JSONObject(json);
+            switch (reader.getString("barva")) {
+                case "červená": {
+                    color = Color.RED;
+                    break;
+                }
+                case "zelená": {
+                    color = Color.GREEN;
+                    break;
+                }
+                case "modrá": {
+                    color = Color.BLUE;
+                    break;
+                }
+                case "černá": {
+                    color = Color.BLACK;
+                    break;
+                }
+                default: { color = Color.RED; }
+            }
+            switch (reader.getString("mapType")) {
+                case "satelitní": {
+                    mapType = GoogleMap.MAP_TYPE_SATELLITE;
+                    break;
+                }
+                case "hybridní": {
+                    mapType = GoogleMap.MAP_TYPE_HYBRID;
+                    break;
+                }
+                case "turistická": {
+                    mapType = GoogleMap.MAP_TYPE_TERRAIN;
+                    break;
+                }
+                case "normální": {
+                    mapType = GoogleMap.MAP_TYPE_NORMAL;
+                    break;
+                }
+                default: { mapType = GoogleMap.MAP_TYPE_TERRAIN; }
+            }
+            autosave = reader.getInt("autosave");
         }
         catch (FileNotFoundException e) { Log.e("login activity", "File not found: " + e.toString()); color = Color.RED;}
         catch (IOException e) { Log.e("login activity", "Can not read file: " + e.toString()); }
+        catch (JSONException e) { e.printStackTrace(); }
     }
 
     public void initmap() {

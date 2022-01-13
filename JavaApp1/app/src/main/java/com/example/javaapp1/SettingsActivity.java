@@ -15,10 +15,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.example.javaapp1.MessageBoxes.MessageBoxNewColor;
+import com.example.javaapp1.MessageBoxes.MessageBoxNewMapType;
 import com.example.javaapp1.databinding.ActivitySettingsBinding;
 import com.google.android.material.navigation.NavigationView;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
 public class SettingsActivity extends AppCompatActivity implements  NavigationView.OnNavigationItemSelectedListener {
@@ -27,6 +35,7 @@ public class SettingsActivity extends AppCompatActivity implements  NavigationVi
     ActionBarDrawerToggle actionBarDrawerToggle;
     NavigationView navigationView;
     Button btn;
+    Button btn2;
     Switch swtch;
 
     @Override
@@ -41,40 +50,93 @@ public class SettingsActivity extends AppCompatActivity implements  NavigationVi
     public void init(){
         btn = findViewById(R.id.btn);
         btn.setOnClickListener(view->changeColor());
+        btn2 = findViewById(R.id.btn2);
+        btn2.setOnClickListener(view -> changeMapType());
         swtch = findViewById(R.id.swtch);
-        swtch.setChecked(true);
+        initSwtch();
         swtch.setOnClickListener(view->autosave());
-        swtch.setEnabled(false); //autosave nefunguje
     }
 
-    public void autosave(){
-        if(swtch.isChecked()){
-            Toast.makeText(getApplicationContext(), "Automatické ukládání vypnuto", Toast.LENGTH_LONG).show();
-            try {
-                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(getApplicationContext().openFileOutput("config.txt", Context.MODE_PRIVATE));
-                outputStreamWriter.write("\nautosaveoff", 10, 50);
-                outputStreamWriter.close();
+    public void initSwtch(){
+        try{
+            InputStream inputStream = getApplicationContext().openFileInput("config.txt");
+            String json;
+            if (inputStream != null) {
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                String receiveString;
+                StringBuilder stringBuilder = new StringBuilder();
+                while ((receiveString = bufferedReader.readLine()) != null) {
+                    stringBuilder.append("\n").append(receiveString);
+                }
+                inputStream.close();
+                json = stringBuilder.toString();
             }
-            catch (IOException e) {
-                Log.e("Exception", "File write failed: " + e.toString());
+            else{
+                json = new JSONObject("{\"barva\":\"červená\",\"autosave\":\"1\",\"mapType\":\"turistická\"}").toString();
             }
+            JSONObject reader = new JSONObject(json);
+            if(reader.getInt("autosave") == 1) { swtch.setChecked(true); }
+            else{ swtch.setChecked(false); }
+        } catch (FileNotFoundException | JSONException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            Log.e("Exception", "File write failed: " + e.toString());
         }
-        else{
-            Toast.makeText(getApplicationContext(), "Automatické ukládání zapnuto", Toast.LENGTH_LONG).show();
-            try {
+    }
+
+    public void autosave() {
+        try {
+            InputStream inputStream = getApplicationContext().openFileInput("config.txt");
+            String json;
+            if (inputStream != null) {
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                String receiveString;
+                StringBuilder stringBuilder = new StringBuilder();
+                while ((receiveString = bufferedReader.readLine()) != null) {
+                    stringBuilder.append("\n").append(receiveString);
+                }
+                inputStream.close();
+                json = stringBuilder.toString();
+            }
+            else{
+                json = new JSONObject("{\"barva\":\"červená\",\"autosave\":\"1\",\"mapType\":\"turistická\"}").toString();
+            }
+            JSONObject reader = new JSONObject(json);
+            if(reader.getInt("autosave") == 1){
+                swtch.setChecked(false);
+                reader.put("autosave", 0);
+                Toast.makeText(getApplicationContext(), "Automatické ukládání vypnuto", Toast.LENGTH_LONG).show();
                 OutputStreamWriter outputStreamWriter = new OutputStreamWriter(getApplicationContext().openFileOutput("config.txt", Context.MODE_PRIVATE));
-                outputStreamWriter.write("\nautosaveon", 10, 50);
+                outputStreamWriter.write(reader.toString());
                 outputStreamWriter.close();
             }
-            catch (IOException e) {
-                Log.e("Exception", "File write failed: " + e.toString());
+            else {
+                reader.put("autosave", 1);
+                swtch.setChecked(true);
+                Toast.makeText(getApplicationContext(), "Automatické ukládání zapnuto", Toast.LENGTH_LONG).show();
+                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(getApplicationContext().openFileOutput("config.txt", Context.MODE_PRIVATE));
+                outputStreamWriter.write(reader.toString());
+                outputStreamWriter.close();
             }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            Log.e("Exception", "File write failed: " + e.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 
     public void changeColor(){
         MessageBoxNewColor box = new MessageBoxNewColor();
-        box.show(getFragmentManager(), "Změna barvy");
+        box.show(getSupportFragmentManager(), "Změna barvy");
+    }
+
+    public void changeMapType(){
+        MessageBoxNewMapType box = new MessageBoxNewMapType();
+        box.show(getSupportFragmentManager(), "Autosave change");
     }
 
     public void setNavigationViewListener() {
@@ -88,7 +150,6 @@ public class SettingsActivity extends AppCompatActivity implements  NavigationVi
     }
 
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        Log.i("item", "" + item.getItemId());
         if (item.getItemId() == R.id.nav_track) {
             Intent intent = new Intent(SettingsActivity.this, MapsActivity.class);
             startActivity(intent);
@@ -109,5 +170,4 @@ public class SettingsActivity extends AppCompatActivity implements  NavigationVi
         }
         return super.onOptionsItemSelected(item);
     }
-
 }

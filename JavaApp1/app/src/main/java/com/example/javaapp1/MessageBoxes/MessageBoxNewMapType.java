@@ -1,6 +1,7 @@
 package com.example.javaapp1.MessageBoxes;
 
 import android.app.Dialog;
+
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,13 +19,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
-public class MessageBoxNewColor extends DialogFragment {
-    String[] colors = {"červená", "zelená", "modrá", "černá"};
+public class MessageBoxNewMapType extends DialogFragment {
+    String[] mapTypes = {"normální", "turistická", "satelitní", "hybridní"};
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle("Vyber is novou barvu trasy");
-        builder.setItems(colors, (dialog, which) -> {
+        builder.setTitle("Vyber is nový typ mapy");
+        builder.setItems(mapTypes, (dialog, which) -> {
             try {
                 InputStream inputStream = getContext().openFileInput("config.txt");
                 String json;
@@ -43,8 +44,8 @@ public class MessageBoxNewColor extends DialogFragment {
                     json = new JSONObject("{\"barva\":\"červená\",\"autosave\":\"1\",\"mapType\":\"turistická\"}").toString();
                 }
                 JSONObject reader = new JSONObject(json);
-                reader.put("barva", colors[which]);
-                Toast.makeText(getContext(), "Byla vybrána barva: "+colors[which], Toast.LENGTH_LONG).show();
+                reader.put("mapType", mapTypes[which]);
+                Toast.makeText(getContext(), "Byl vybrán typ: "+mapTypes[which], Toast.LENGTH_LONG).show();
                 OutputStreamWriter outputStreamWriter = new OutputStreamWriter(getContext().openFileOutput("config.txt", Context.MODE_PRIVATE));
                 outputStreamWriter.write(reader.toString());
                 outputStreamWriter.close();

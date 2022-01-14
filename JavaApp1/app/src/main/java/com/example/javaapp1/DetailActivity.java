@@ -2,23 +2,37 @@ package com.example.javaapp1;
 
 import static androidx.core.content.PermissionChecker.PERMISSION_GRANTED;
 
+import android.Manifest;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Matrix;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.util.Log;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.fragment.app.Fragment;
 import androidx.room.Room;
-
-import android.Manifest;
-import android.content.Context;
-import android.content.Intent;
-import android.graphics.Color;
-import android.os.Build;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.MenuItem;
-import android.widget.Button;
-import android.widget.TextView;
 
 import com.example.javaapp1.MessageBoxes.MessageBoxDelete;
 import com.example.javaapp1.db.AppDatabase;
@@ -39,19 +53,25 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class DetailActivity extends AppCompatActivity implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener {
 
     Button ButtonBack;
     Button ButtonDelete;
+    Button ButtonExport;
+    Bitmap fragmentBmp;
     GoogleMap mMap;
     FusedLocationProviderClient mLocationClient;
     RouteDAO routeDAO;
@@ -169,7 +189,7 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
                     break;
                 }
                 default: { mapType = GoogleMap.MAP_TYPE_TERRAIN; }
-            };
+            }
         }
         catch (FileNotFoundException e) { Log.e("login activity", "File not found: " + e.toString()); color = Color.RED;}
         catch (IOException e) { Log.e("login activity", "Can not read file: " + e.toString()); }
@@ -186,8 +206,10 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
     public void initBttn(){
         ButtonBack = findViewById(R.id.ButtonBack);
         ButtonDelete = findViewById(R.id.ButtonDelete);
+        ButtonExport = findViewById(R.id.ButtonShare);
         ButtonBack.setOnClickListener(view -> goBack());
         ButtonDelete.setOnClickListener(view -> delete());
+        ButtonExport.setOnClickListener(view -> screenshot());
         id = getIntent().getExtras().getInt("id");
     }
 
@@ -201,11 +223,91 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
         box.show(getSupportFragmentManager(), "Delete record");
     }
 
+    private void screenshot() {
+        GoogleMap.SnapshotReadyCallback callback = bitmap -> {
+            fragmentBmp = bitmap;
+            ButtonBack.setVisibility(View.INVISIBLE);
+            ButtonExport.setVisibility(View.INVISIBLE);
+            ButtonDelete.setVisibility(View.INVISIBLE);
+
+            LinearLayout layout = (LinearLayout) DetailActivity.this.findViewById(R.id.forScreen);
+            Bitmap rest = Bitmap.createBitmap(layout.getWidth(), layout.getHeight(), Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(rest);
+            switch (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) {
+                case Configuration.UI_MODE_NIGHT_YES:{
+                    canvas.drawColor(Color.BLACK);
+                    break;
+                }
+                case Configuration.UI_MODE_NIGHT_NO:{
+                    canvas.drawColor(Color.WHITE);
+                    break;
+                }
+            }
+            layout.draw(canvas);
+
+            ButtonBack.setVisibility(View.VISIBLE);
+            ButtonExport.setVisibility(View.VISIBLE);
+            ButtonDelete.setVisibility(View.VISIBLE);
+
+            Bitmap finalBmp = Bitmap.createBitmap(rest.getWidth(), rest.getHeight(), Bitmap.Config.ARGB_8888);
+            Canvas canvasFinal = new Canvas(finalBmp);
+            canvasFinal.drawBitmap(rest, new Matrix(), null);
+            float width = Math.round(rest.getWidth()/15.5);
+            float height = Math.round(rest.getHeight()/6.8);
+            canvasFinal.drawBitmap(fragmentBmp, width, height, null);
+            rest.recycle();
+            fragmentBmp.recycle();
+
+            Date now = new Date(System.currentTimeMillis());
+            SimpleDateFormat df = new SimpleDateFormat("yyMMddHHmmss");
+            try {
+                if (Build.VERSION.SDK_INT >= 29) {
+                    ContentResolver resolver = DetailActivity.this.getApplicationContext().getContentResolver();
+                    ContentValues contentValues = new ContentValues();
+                    contentValues.put(MediaStore.Images.Media.DISPLAY_NAME, "route_" + df.format(now) + ".png");
+                    contentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
+                    contentValues.put(MediaStore.Images.Media.DATE_TAKEN, now.toString());
+                    contentValues.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_DCIM + "/" + DetailActivity.this.getString(R.string.app_name));
+                    Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
+                    if (uri != null) {
+                        DetailActivity.this.saveImageToStream(finalBmp, resolver.openOutputStream(uri));
+                        resolver.update(uri, contentValues, null, null);
+                    }
+                } else {
+                    File dir = new File((DetailActivity.this.getApplicationContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES) + "/" + DetailActivity.this.getString(R.string.app_name)));
+                    if (!dir.exists()) {
+                        dir.mkdirs();
+                    }
+                    File file = new File(dir.getAbsolutePath() + File.separator + "route_" + df.format(now) + ".png");
+                    DetailActivity.this.saveImageToStream(finalBmp, new FileOutputStream(file));
+                    ContentValues values = new ContentValues();
+                    values.put(MediaStore.Images.Media.DATA, file.getAbsolutePath());
+                    DetailActivity.this.getApplicationContext().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+            Toast.makeText(DetailActivity.this, "Obrázek trasy uložen do galerie", Toast.LENGTH_LONG).show();
+        };
+        mMap.snapshot(callback);
+    }
+
+    private void saveImageToStream(Bitmap bitmap, OutputStream outputStream) {
+        if (outputStream != null) {
+            try {
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+                outputStream.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public void onMapReady(@NonNull GoogleMap googleMap) {
         checkPermission();
         mMap = googleMap;
         mLocationClient = new FusedLocationProviderClient(this);
-        mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+        mMap.setMapType(mapType);
         showDetail(id);
     }
 
@@ -213,12 +315,17 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
         if (Build.VERSION.SDK_INT >= 29) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
                     ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PERMISSION_GRANTED) {
-                String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION};
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(this,Manifest.permission.READ_EXTERNAL_STORAGE) != PERMISSION_GRANTED) {
+                String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION,
+                        Manifest.permission.ACCESS_BACKGROUND_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
                 requestPermissions(permissions, PERMISSION_GRANTED);
                 while (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
                         ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED &&
-                        ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PERMISSION_GRANTED) {
+                        ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PERMISSION_GRANTED &&
+                        ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PERMISSION_GRANTED &&
+                        ActivityCompat.checkSelfPermission(this,Manifest.permission.READ_EXTERNAL_STORAGE) != PERMISSION_GRANTED) {
                     try {
                         Thread.sleep(200);
                     } catch (InterruptedException e) {
@@ -229,11 +336,16 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
         }
         else{
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED) {
-                String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION};
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(this,Manifest.permission.READ_EXTERNAL_STORAGE) != PERMISSION_GRANTED) {
+                String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
                 requestPermissions(permissions, PERMISSION_GRANTED);
                 while (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
-                        ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED) {
+                        ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED &&
+                        ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PERMISSION_GRANTED &&
+                        ActivityCompat.checkSelfPermission(this,Manifest.permission.READ_EXTERNAL_STORAGE) != PERMISSION_GRANTED) {
                     try {
                         Thread.sleep(200);
                     } catch (InterruptedException e) {

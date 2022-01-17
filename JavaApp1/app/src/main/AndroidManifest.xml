@@ -18,7 +18,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.JavaApp1"
-        android:screenOrientation="portrait"
         android:requestLegacyExternalStorage="true">
         <meta-data
             android:name="com.google.android.geo.API_KEY"
@@ -26,6 +25,7 @@
         <activity
             android:name=".Launcher"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:label="TrackApp">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -35,18 +35,22 @@
         <activity
             android:name=".SettingsActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:label="Nastavení" />
         <activity
             android:name=".SavesActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:label="Mé uložené trasy" />
         <activity
             android:name=".DetailActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:label="Detail trasy"/>
         <activity
             android:name=".MapsActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:label="Trasování" />
     </application>
 </manifest>

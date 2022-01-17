@@ -22,7 +22,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.room.Room;
 
-import com.example.javaapp1.MessageBoxes.MessageBoxNewColor;
+import com.example.javaapp1.MessageBoxes.MessageBoxBackgroundLocationAPI30;
 import com.example.javaapp1.MessageBoxes.MessageBoxNoLocation;
 import com.example.javaapp1.MessageBoxes.MessageBoxSaveRoute;
 import com.example.javaapp1.databinding.ActivityMapsBinding;
@@ -218,9 +218,9 @@ public class MapsActivity extends AppCompatActivity implements
                 .build();
         client.newCall(request).enqueue(new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {}
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {}
             @Override
-            public void onResponse(Call call, Response response) throws IOException { ;
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 String json = response.body().string();
                 try {
                     JSONObject reader = new JSONObject(json);
@@ -358,7 +358,31 @@ public class MapsActivity extends AppCompatActivity implements
     }
 
     public void checkPermission() {
-        if (Build.VERSION.SDK_INT >= 29) {
+        if (Build.VERSION.SDK_INT >= 30) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED ||
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED ||
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PERMISSION_GRANTED ||
+                    ActivityCompat.checkSelfPermission(this,Manifest.permission.READ_EXTERNAL_STORAGE) != PERMISSION_GRANTED) {
+                String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
+                ActivityCompat.requestPermissions(this, permissions, PERMISSION_GRANTED);
+                while (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED ||
+                        ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED ||
+                        ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PERMISSION_GRANTED ||
+                        ActivityCompat.checkSelfPermission(this,Manifest.permission.READ_EXTERNAL_STORAGE) != PERMISSION_GRANTED) {
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            if( ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PERMISSION_GRANTED ){
+                MessageBoxBackgroundLocationAPI30 box = new MessageBoxBackgroundLocationAPI30();
+                box.show(getSupportFragmentManager(), "Request background location");
+            }
+        }
+        else if (Build.VERSION.SDK_INT == 29) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED &&
                     ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED &&
                     ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PERMISSION_GRANTED &&

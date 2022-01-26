@@ -4,6 +4,7 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -33,7 +34,6 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
     NavigationView navigationView;
     ActionBarDrawerToggle actionBarDrawerToggle;
     LinearLayout dataContainer;
-    int finalI;
     List<Route> dbRoute;
 
     @Override
@@ -57,11 +57,11 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
     public void listDB() {
         List<Route> routes = routeDAO.getAll();
         for(int i = 0; i < routes.size(); i++) {
+            final int finalI = i; //protože i by muselo být final kvůli onClickListeneru
             TableRow row = new TableRow(SavesActivity.this);
             TableRow.LayoutParams params = new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT,
                     WRAP_CONTENT);
             row.setWeightSum(5f);
-            finalI = i; //protože i musí být final kvůli dalšímu řádku
             row.setOnClickListener(view -> showDetail(finalI));
             params.topMargin = 25;
             row.setLayoutParams(params);
@@ -85,7 +85,7 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
             params = new TableRow.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, 1.05f);
             TextView length = new TextView(SavesActivity.this);
             if(routes.get(i).length > 1000) {
-                double kmLength = routes.get(i).length/1000;
+                double kmLength = Math.round(routes.get(i).length/10)/100.00;
                 length.setText(kmLength+"km");
             }
             else{
@@ -112,9 +112,9 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
         }
     }
 
-    private void showDetail(int finalI) {
+    private void showDetail(int i) {
         Intent intent = new Intent(SavesActivity.this, DetailActivity.class);
-        intent.putExtra("id", finalI);
+        intent.putExtra("id", i);
         startActivity(intent);
     }
 
@@ -131,9 +131,6 @@ public class SavesActivity extends AppCompatActivity implements NavigationView.O
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.nav_track) {
             Intent intent = new Intent(SavesActivity.this, MapsActivity.class);
-            startActivity(intent);
-        } else if (item.getItemId() == R.id.nav_my_saves) {
-            Intent intent = new Intent(SavesActivity.this, SavesActivity.class);
             startActivity(intent);
         } else if (item.getItemId() == R.id.nav_settings) {
             Intent intent = new Intent(SavesActivity.this, SettingsActivity.class);

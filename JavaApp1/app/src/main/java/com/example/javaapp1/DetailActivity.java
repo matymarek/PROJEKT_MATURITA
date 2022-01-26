@@ -106,7 +106,7 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
         date.setText("Datum: "+df.format(route.date));
 
         TextView length = findViewById(R.id.lengthPopup);
-        if(route.length > 1000) { double kmLength = route.length/1000; length.setText("Vzdálenost: "+kmLength+"km"); }
+        if(route.length > 1000) { double kmLength = Math.round(route.length/10)/100.00; length.setText("Vzdálenost: "+kmLength+"km"); }
         else{ length.setText("Vzdálenost: "+route.length+"m"); }
 
         TextView time = findViewById(R.id.timePopup);

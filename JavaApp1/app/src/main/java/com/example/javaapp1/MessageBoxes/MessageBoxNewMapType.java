@@ -24,7 +24,7 @@ public class MessageBoxNewMapType extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle("Vyber is nový typ mapy");
+        builder.setTitle("Vyber si nový typ mapy");
         builder.setItems(mapTypes, (dialog, which) -> {
             try {
                 InputStream inputStream = getContext().openFileInput("config.txt");

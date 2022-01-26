@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
@@ -77,6 +79,8 @@ public class MapsActivity extends AppCompatActivity implements
     Button Button3;
     FusedLocationProviderClient mLocationClient;
     boolean tracking;
+    boolean network;
+    double netSpeed;
     double longitude;
     double latitude;
     double elevation;
@@ -89,7 +93,6 @@ public class MapsActivity extends AppCompatActivity implements
     int mapType;
     Timer timer;
     TimeZone tz;
-
 
     double length;
     Long timeLength;
@@ -110,6 +113,7 @@ public class MapsActivity extends AppCompatActivity implements
         setContentView(binding.getRoot());
         setNavigationViewListener();
         readFromFile(getApplicationContext());
+        initNetwork(getApplicationContext());
         initDB();
         initmap();
         initButtons();
@@ -124,11 +128,7 @@ public class MapsActivity extends AppCompatActivity implements
             gotoLocation(getCurrentLocation());
             route = new ArrayList<>();
             route.add(getCurrentLocation());
-            elevationMin = elevationMax = elevation;
-            latRoute = new ArrayList<>();
-            longRoute = new ArrayList<>();
-            latRoute.add(route.get(0).latitude);
-            longRoute.add(route.get(0).longitude);
+            elevationMax = elevationMin = requestElevation(route.get(0).latitude, route.get(0).longitude);
             timer = new Timer();
             count = 0;
             initPM();
@@ -139,23 +139,25 @@ public class MapsActivity extends AppCompatActivity implements
                 public void run() {
                     runOnUiThread(() -> {
                         LatLng current = getCurrentLocation();
-                        if(count == 5) {gotoLocation(current); count = 0;}
+                        if(count == 10) {
+                            gotoLocation(current);
+                            elevation = requestElevation(current.latitude, current.longitude);
+                            if(elevation >elevationMax) elevationMax = elevation;
+                            else if(elevation < elevationMin) elevationMin = elevation;
+                            count = 0;
+                        }
+                        count++;
                         route.add(current);
-                        latRoute.add(current.latitude);
-                        longRoute.add(current.longitude);
                         results = new float[3];
                         Location.distanceBetween(current.latitude, current.longitude, route.get(route.size() - 2).latitude, route.get(route.size() - 2).longitude, results);
                         length += results[0];
-                        Log.i("length", ""+length);
                         PolylineOptions polylineOptions = new PolylineOptions()
                                 .addAll(route)
                                 .color(color)
                                 .startCap(new RoundCap())
                                 .endCap(new RoundCap());
+                        //mMap.clear();
                         Polyline polyline = mMap.addPolyline(polylineOptions);
-                        Log.i("elevation", ""+elevation);
-                        if(elevation >elevationMax) elevationMax = elevation;
-                        else if(elevation < elevationMin) elevationMin = elevation;
                     });
                 }
             }, 500, 500);
@@ -166,6 +168,12 @@ public class MapsActivity extends AppCompatActivity implements
         if (tracking) {
             timer.cancel();
             Toast.makeText(this, "Trasování ukončeno", Toast.LENGTH_LONG).show();
+            latRoute = new ArrayList<>();
+            longRoute = new ArrayList<>();
+            for(int i = 0; i < route.size(); i++){
+                latRoute.add(route.get(i).latitude);
+                longRoute.add(route.get(i).longitude);
+            }
             tracking = false;
             dbRoute = routeDAO.getAll();
             Route route = new Route();
@@ -196,7 +204,6 @@ public class MapsActivity extends AppCompatActivity implements
                 if(location != null) {
                     latitude = location.getLatitude();
                     longitude = location.getLongitude();
-                    requestElevation(latitude, longitude);
                 }
                 else {
                     MessageBoxNoLocation box = new MessageBoxNoLocation();
@@ -209,30 +216,46 @@ public class MapsActivity extends AppCompatActivity implements
         return new LatLng(latitude, longitude);
     }
 
-    public void requestElevation(double latitude, double longitude){
+    public double requestElevation(double latitude, double longitude){
         final double[] res = {0.0};
-        OkHttpClient client = new OkHttpClient().newBuilder().build();
-        Request request = new Request.Builder()
-                .url("https://maps.googleapis.com/maps/api/elevation/json?locations="+latitude+"%2C"+longitude+"&key="+getString(R.string.Api_key))
-                .method("GET", null)
-                .build();
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {}
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                String json = response.body().string();
+        final boolean[] ready = {false};
+        if (network && netSpeed > 1000) {
+            OkHttpClient client = new OkHttpClient().newBuilder().build();
+            Request request = new Request.Builder()
+                    .url("https://maps.googleapis.com/maps/api/elevation/json?locations=" + latitude + "%2C" + longitude + "&key=" + getString(R.string.Api_key))
+                    .method("GET", null)
+                    .build();
+            client.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    ready[0] = true;
+                }
+
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                    String json = response.body().string();
+                    try {
+                        JSONObject reader = new JSONObject(json);
+                        JSONArray results = reader.getJSONArray("results");
+                        JSONObject result = results.getJSONObject(0);
+                        res[0] = result.getDouble("elevation");
+                        ready[0] = true;
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        ready[0] = true;
+                    }
+                }
+            });
+            while (!ready[0]) {
                 try {
-                    JSONObject reader = new JSONObject(json);
-                    JSONArray results = reader.getJSONArray("results");
-                    JSONObject result = results.getJSONObject(0);
-                    res[0] = result.getDouble("elevation");
-                    elevation = res[0];
-                } catch (JSONException e) {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
-        });
+        }
+        Log.i("res", ""+res[0]);
+        return res[0];
     }
 
     public void gotoLocation(LatLng current) {
@@ -327,6 +350,13 @@ public class MapsActivity extends AppCompatActivity implements
         catch (FileNotFoundException e) { Log.e("login activity", "File not found: " + e.toString()); color = Color.RED;}
         catch (IOException e) { Log.e("login activity", "Can not read file: " + e.toString()); }
         catch (JSONException e) { e.printStackTrace(); }
+    }
+
+    public void initNetwork(Context context) {
+        ConnectivityManager connectivityManager = ((ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE));
+        network = connectivityManager.getActiveNetworkInfo() != null && connectivityManager.getActiveNetworkInfo().isConnected();
+        NetworkCapabilities nc = connectivityManager.getNetworkCapabilities(connectivityManager.getActiveNetwork());
+        netSpeed = nc.getLinkDownstreamBandwidthKbps();
     }
 
     public void initmap() {
@@ -437,10 +467,7 @@ public class MapsActivity extends AppCompatActivity implements
     }
 
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.nav_track) {
-            Intent intent = new Intent(MapsActivity.this, MapsActivity.class);
-            startActivity(intent);
-        } else if (item.getItemId() == R.id.nav_my_saves) {
+        if (item.getItemId() == R.id.nav_my_saves) {
             Intent intent = new Intent(MapsActivity.this, SavesActivity.class);
             startActivity(intent);
         } else if (item.getItemId() == R.id.nav_settings) {

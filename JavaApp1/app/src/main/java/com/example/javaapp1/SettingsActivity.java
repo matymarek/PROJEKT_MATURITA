@@ -156,9 +156,6 @@ public class SettingsActivity extends AppCompatActivity implements  NavigationVi
         } else if (item.getItemId() == R.id.nav_my_saves) {
             Intent intent = new Intent(SettingsActivity.this, SavesActivity.class);
             startActivity(intent);
-        } else if (item.getItemId() == R.id.nav_settings) {
-            Intent intent = new Intent(SettingsActivity.this, SettingsActivity.class);
-            startActivity(intent);
         }
         return false;
     }

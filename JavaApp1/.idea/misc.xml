@@ -4,6 +4,8 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/debug/res/menu/main.xml" value="0.1" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.35052083333333334" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/drawable/ic_launcher_background.xml" value="0.35052083333333334" />
         <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/activity_detail.xml" value="0.334375" />
         <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/activity_launcher.xml" value="0.38697916666666665" />
         <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/activity_maps.xml" value="0.334375" />
@@ -21,6 +23,7 @@
         <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/nav_header_main.xml" value="0.1" />
         <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/layout/popup_detail.xml" value="0.2988679352838745" />
         <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/menu/drawer_view.xml" value="0.3697916666666667" />
+        <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" value="0.35052083333333334" />
         <entry key="..\:/.SKOLA/PROJEKT_MATURITA/JavaApp1/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" value="0.22604166666666667" />
       </map>
     </option>

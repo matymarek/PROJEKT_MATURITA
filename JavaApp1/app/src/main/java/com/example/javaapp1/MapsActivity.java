@@ -156,7 +156,7 @@ public class MapsActivity extends AppCompatActivity implements
                                 .color(color)
                                 .startCap(new RoundCap())
                                 .endCap(new RoundCap());
-                        //mMap.clear();
+                        mMap.clear();
                         Polyline polyline = mMap.addPolyline(polylineOptions);
                     });
                 }
@@ -254,7 +254,6 @@ public class MapsActivity extends AppCompatActivity implements
                 }
             }
         }
-        Log.i("res", ""+res[0]);
         return res[0];
     }
 

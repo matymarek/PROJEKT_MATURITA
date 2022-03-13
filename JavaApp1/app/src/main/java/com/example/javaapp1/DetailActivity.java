@@ -97,7 +97,7 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
     public void showDetail(int id) {
         Route route = dbRoute.get(id);
         ArrayList<LatLng> routeList = new ArrayList<>();
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(route.latPoints.get(route.latPoints.size()/2), route.longPoints.get(route.longPoints.size()/2)), 18));
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(route.latPoints.get(route.latPoints.size()/2), route.longPoints.get(route.longPoints.size()/2)), 13));
         for(int i = 0; i < route.latPoints.size(); i++){
             routeList.add(new LatLng(route.latPoints.get(i), route.longPoints.get(i)));
         }

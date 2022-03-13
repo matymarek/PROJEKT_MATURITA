@@ -77,7 +77,7 @@ public class SettingsActivity extends AppCompatActivity implements  NavigationVi
             }
             JSONObject reader = new JSONObject(json);
             if(reader.getInt("autosave") == 1) { swtch.setChecked(true); }
-            else{ swtch.setChecked(false); }
+            else { swtch.setChecked(false); }
         } catch (FileNotFoundException | JSONException e) {
             e.printStackTrace();
         } catch (IOException e) {

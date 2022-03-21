@@ -26,4 +26,3 @@ public class Route {
     @ColumnInfo(name = "track_points_long")
     public ArrayList<Double> longPoints;
 }
-

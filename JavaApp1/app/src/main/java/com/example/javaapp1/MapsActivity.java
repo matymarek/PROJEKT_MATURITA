@@ -177,7 +177,6 @@ public class MapsActivity extends AppCompatActivity implements
             tracking = false;
             dbRoute = routeDAO.getAll();
             Route route = new Route();
-            route.id = dbRoute.size() + 1;
             route.date = new Date(System.currentTimeMillis());
             route.length = Math.round(length*100)/100.00;
             route.timeLength = new Date(TimeUnit.MILLISECONDS.toMillis(System.currentTimeMillis() - timeLength));

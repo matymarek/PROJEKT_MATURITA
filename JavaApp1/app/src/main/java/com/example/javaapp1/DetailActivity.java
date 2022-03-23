@@ -251,8 +251,8 @@ public class DetailActivity extends AppCompatActivity implements OnMapReadyCallb
             Bitmap finalBmp = Bitmap.createBitmap(rest.getWidth(), rest.getHeight(), Bitmap.Config.ARGB_8888);
             Canvas canvasFinal = new Canvas(finalBmp);
             canvasFinal.drawBitmap(rest, new Matrix(), null);
-            float width = Math.round(rest.getWidth()/15.5);
-            float height = Math.round(rest.getHeight()/6.8);
+            float width = Math.round(rest.getWidth()/15.55);
+            float height = Math.round(rest.getHeight()/6.975);
             canvasFinal.drawBitmap(fragmentBmp, width, height, null);
             rest.recycle();
             fragmentBmp.recycle();
